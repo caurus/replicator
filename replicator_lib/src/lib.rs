@@ -1,5 +1,5 @@
 
-pub fn print_hello_world(){
-    print!("Hello World!");
+pub fn phw(){
+    print!("Hello World from lib.rs!");
 }
 

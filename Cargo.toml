@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+    "replicator_bin",
+    "replicator_lib",
+]

@@ -1,5 +1,5 @@
-use replicatorlib::print_hello_world as phw;
+use replicator_lib as rl;
 
 fn main() {
-    phw();
+    rl::phw();
 }
