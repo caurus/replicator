@@ -4,6 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-
-
-
+anyhow = { workspace = true }
+tokio = { workspace = true }
+russh = { workspace = true }
+russh-keys = { workspace = true }
+async-trait = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+russh-sftp = { workspace = true }

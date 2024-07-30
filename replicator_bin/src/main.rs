@@ -1,4 +1,4 @@
-//use replicator_lib as rl;
+use replicator_lib as rl;
 use std::{ env, fs, io };
 
 fn main() {
@@ -30,7 +30,7 @@ fn main() {
 
     //TODO: Call lib func to connect to machine from vec holding VM names
     // params: username, vm_name, pass
-    
+    rl::connect_to_machine(username.to_string(), "best-linux.cs.wisc.edu".to_string(), pass.to_string());
 
     //TODO: Check if binary is already installed
     //          if not, install binary
