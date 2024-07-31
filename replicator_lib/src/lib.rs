@@ -1,6 +1,9 @@
 use std::sync::Arc;
-//use tokio as tk;
-use russh::{client, ChannelId};
+//use std::io;
+//use std::io::Write;
+//use tokio::io as tokio_io;
+use russh::*;
+use russh::keys::*;
 //use russh_keys::key;
 //use anyhow::Error;
 use async_trait::async_trait;
@@ -19,26 +22,34 @@ use russh_sftp::client::SftpSession;
 //        pass = password for the username on the vm
 //return: Result holding either a successful connection or the error thrown during the process
 
+struct Client;
+
+#[async_trait]
+impl client::Handler for Client {
+    type Error = anyhow::Error;
+
+    async fn check_server_key(
+        &mut self,
+        server_public_key: &key::PublicKey,
+    ) -> Result<bool, Self::Error> {
+        info!("check_server_key: {:?}", server_public_key);
+        Ok(true)
+    }
+
+    async fn data(
+        &mut self,
+        channel: ChannelId,
+        data: &[u8],
+        _session: &mut client::Session,
+    ) -> Result<(), Self::Error> {
+        info!("data on channel {:?}: {}", channel, data.len());
+        Ok(())
+    }
+}
  
 
-async fn connect_to_machine(username: String, vm_ip: String, pass: String) {
+pub async fn connect_to_machine(username: String, vm_ip: String, pass: String) {
 
-    struct Client;
-
-    #[async_trait]
-    impl client::Handler for Client {
-        type Error = anyhow::Error;
-
-        async fn data(
-            &mut self,
-            channel: ChannelId,
-            data: &[u8],
-            _session: &mut client::Session,
-        ) -> Result<(), Self::Error> {
-            info!("data on channel {:?}: {}", channel, data.len());
-            Ok(())
-        }
-    }
 
     //??
     env_logger::init();

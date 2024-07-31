@@ -1,10 +1,19 @@
-use replicator_lib as rl;
+use replicator_lib::connect_to_machine as con_to_mach;
 use std::{ env, fs, io };
+use std::io::Write;
+use rpassword::read_password;
+use tokio::*;
 
-fn main() {
+#[tokio::main]
+async fn main() {
 
     //TODO: Get file name from CLA
     let args: Vec<String> = env::args().collect();
+
+    if args.len() < 3 {
+        eprintln!("Usage: {} <file_path> <username>", args[0]);
+        return;
+    }
 
     let file_path = &args[1];
     let username = &args[2];
@@ -19,8 +28,10 @@ fn main() {
     }
 
     //get password from user for VMs
-    let mut pass = String::new();
-    io::stdin().read_line(&mut pass).expect("Error reading input");
+    print!("Please enter your password for the VMs: ");
+    io::stdout().flush().unwrap();
+
+    let pass = read_password().unwrap();
 
     //TODO: Also consider posibility of trouble reading file
 
@@ -30,7 +41,7 @@ fn main() {
 
     //TODO: Call lib func to connect to machine from vec holding VM names
     // params: username, vm_name, pass
-    rl::connect_to_machine(username.to_string(), "best-linux.cs.wisc.edu".to_string(), pass.to_string());
+    con_to_mach(username.to_string(), vm_names[0].to_string(), pass.to_string()).await;
 
     //TODO: Check if binary is already installed
     //          if not, install binary
