@@ -4,7 +4,8 @@ use std::sync::Arc;
 //use tokio::io as tokio_io;
 use russh::*;
 use russh::keys::*;
-//use russh_keys::key;
+use russh_keys::decode_secret_key;
+//use russh_keys::key::KeyPair;
 //use anyhow::Error;
 use async_trait::async_trait;
 use log::info;
@@ -48,54 +49,28 @@ impl client::Handler for Client {
 }
  
 
-pub async fn connect_to_machine(username: String, vm_ip: String, pass: String) {
 
+pub async fn connect_to_machine(vm_ip: String, path_to_key: String) {
 
     //??
-    env_logger::init();
+    //env_logger::init();
+   
 
     //set up configuration for the session
     let config = russh::client::Config::default();
     let sh = Client {};
 
+    let private_key = tokio::fs::read_to_string(path_to_key).await.unwrap();
+    let keypair = decode_secret_key(&private_key, None).unwrap();
     //connect to the session
     let mut session = russh::client::connect(Arc::new(config), (vm_ip, 22), sh).await.unwrap();
 
     //if session auth works then ...
-    if session.authenticate_password(username, pass).await.unwrap() {
+    //TODO: Must change this to use russh key 
+    if session.authenticate_publickey("ubuntu", Arc::new(keypair)).await.unwrap() {
         //open channel on session
-        let channel = session.channel_open_session().await.unwrap();
 
-        //request sftp subsystem??
-        channel.request_subsystem(true, "sftp").await.unwrap();
-
-        //??
-        let sftp = SftpSession::new(channel.into_stream()).await.unwrap();
-        info!("current path: {:?}", sftp.canonicalize(".").await.unwrap());
-
-        // create dir and symlink
-        let path = "./jjs_special_dir";
-        let symlink = "./symlink";
-
-        //sftp the directory
-        sftp.create_dir(path).await.unwrap();
-        sftp.symlink(path, symlink).await.unwrap();
-
-        //??
-        info!("dir info: {:?}", sftp.metadata(path).await.unwrap());
-        info!(
-            "symlink info: {:?}",
-            sftp.symlink_metadata(path).await.unwrap()
-        );
-
-        // scanning directory
-        for entry in sftp.read_dir(".").await.unwrap() {
-            info!("file in directory: {:?}", entry.file_name());
-        }
-
-        //remove things?
-        sftp.remove_file(symlink).await.unwrap();
-        sftp.remove_dir(path).await.unwrap();
+        println!("Authenticated!");
         
     }
 
@@ -107,3 +82,15 @@ pub async fn connect_to_machine(username: String, vm_ip: String, pass: String) {
 //TODO: Func to run a binary on said machine??
 
 //TODO: Func to spin down a machine given a VM name
+
+//helper func for parsing private key
+/* 
+async fn parse_private_key(file_path: String) -> Result<String, io::Error>{
+
+    //read the private key file
+    let contents: Result<String, io::Error> = fs::read_to_string(file_path).unwrap()?;
+
+
+
+}
+    */

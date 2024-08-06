@@ -6,4 +6,4 @@ edition = "2021"
 [dependencies]
 replicator_lib = { path = "../replicator_lib" }
 tokio = { workspace = true }
-rpassword = { workspace = true }
+env_logger = { workspace = true }
