@@ -8,12 +8,13 @@ async fn main() {
     //TODO: Get file name from CLA
     let args: Vec<String> = env::args().collect();
 
-    if args.len() < 2 {
-        eprintln!("Usage: {} <file_path>", args[0]);
+    if args.len() < 3 {
+        eprintln!("Usage: {} <file_path> <test_dir_name_on_vm>", args[0]);
         return;
     }
 
     let file_path = &args[1];
+    let test_dir_name = &args[2];
 
     //handle error of invalid file
     let contents_r: Result<String, io::Error> = fs::read_to_string(file_path);
@@ -46,7 +47,7 @@ async fn main() {
     env_logger::init();
 
     for machine in &vms {
-        con_to_mach(machine.0.to_string(), machine.1.to_string()).await;
+        con_to_mach(machine.0.to_string(), machine.1.to_string(), test_dir_name).await;
     }
     //con_to_mach(vms[0].0.to_string(), vms[0].1.to_string()).await;
     //con_to_mach(vms[1].0.to_string(), vms[1].1.to_string()).await;

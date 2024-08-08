@@ -50,7 +50,7 @@ impl client::Handler for Client {
  
 
 
-pub async fn connect_to_machine(vm_ip: String, path_to_key: String) {
+pub async fn connect_to_machine(vm_ip: String, path_to_key: String, test_dir_name: &str) {
 
     //??
     //env_logger::init();
@@ -80,13 +80,45 @@ pub async fn connect_to_machine(vm_ip: String, path_to_key: String) {
         //print path of sftp on vm
         info!("current path: {:?}", sftp.canonicalize(".").await.unwrap());
 
-        let path_on_vm = "./new_dir";
+        let path_on_vm = format!("./{}", test_dir_name);
+        //check if the file already exists on the vm
+        match sftp.try_exists(&path_on_vm).await {
+            
+            Ok(exists) => {
+
+                if exists {
+                    //if it exists, check the metadata
+                    match sftp.metadata(&path_on_vm).await {
+                        Ok(metadata) => {
+                            //if metadata is a directory, then print so
+                            if metadata.is_dir()  {
+                                println!("Directory '{}' already exists!", &path_on_vm);
+                                //TODO: Figure out what do do when directory already exists
+                            } else {
+                                println!("A file exists at '{}', but it is not a directory.", &path_on_vm);
+                                //TODO: Figure out what to do when 
+                            }
+                        }
+                        Err(err) => {
+                            println!("Error retrieving metadata: {}", err);
+                        }
+                    }
+                } else {
+                    // Directory doesn't exist, create it
+                    sftp.create_dir(&path_on_vm).await.unwrap();
+                    println!("Directory '{}' created.", &path_on_vm);
+                }
+            }
+            Err(err) => {
+                println!("Error checking existence: {}", err);
+            }
+        }
 
         //create a new directory on remote machine
         //sftp.create_dir(path_on_vm).await.unwrap();
 
         //deelte a directory on remote machine
-        //sftp.remove_dir(path_on_vm).await.unwrap();
+        //sftp.remove_file(path_on_vm).await.unwrap();
 
 
         //copy something over to the machine
