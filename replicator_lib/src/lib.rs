@@ -69,8 +69,29 @@ pub async fn connect_to_machine(vm_ip: String, path_to_key: String) {
     //TODO: Must change this to use russh key 
     if session.authenticate_publickey("ubuntu", Arc::new(keypair)).await.unwrap() {
         //open channel on session
+        let channel = session.channel_open_session().await.unwrap();
 
-        println!("Authenticated!");
+        //begin sftp session
+        channel.request_subsystem(true, "sftp").await.unwrap();
+
+        //instantiate sftp session
+        let sftp = SftpSession::new(channel.into_stream()).await.unwrap();
+
+        //print path of sftp on vm
+        info!("current path: {:?}", sftp.canonicalize(".").await.unwrap());
+
+        let path_on_vm = "./new_dir";
+
+        //create a new directory on remote machine
+        //sftp.create_dir(path_on_vm).await.unwrap();
+
+        //deelte a directory on remote machine
+        //sftp.remove_dir(path_on_vm).await.unwrap();
+
+
+        //copy something over to the machine
+
+
         
     }
 
@@ -82,15 +103,3 @@ pub async fn connect_to_machine(vm_ip: String, path_to_key: String) {
 //TODO: Func to run a binary on said machine??
 
 //TODO: Func to spin down a machine given a VM name
-
-//helper func for parsing private key
-/* 
-async fn parse_private_key(file_path: String) -> Result<String, io::Error>{
-
-    //read the private key file
-    let contents: Result<String, io::Error> = fs::read_to_string(file_path).unwrap()?;
-
-
-
-}
-    */
