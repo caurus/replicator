@@ -1,5 +1,5 @@
 use replicator_lib::connect_to_machine as con_to_mach;
-use std::{ env, fs, io };
+use std::{ env, fs::{self, File}, io::{self, Read} };
 //use tokio::*;
 
 #[tokio::main]
@@ -25,9 +25,6 @@ async fn main() {
         Err(error) => panic!("Threw the following error: {}", error)
     }
 
-    //TODO: Also consider posibility of trouble reading file
-
-
     //Creates a vector where each tuple in the vec holds a vm_ip
     //and path to the ssh key
     let vms: Vec<(String, String)> = contents.lines()
@@ -46,11 +43,16 @@ async fn main() {
     // params: vm_name, path_to_key
     env_logger::init();
 
+    //read binary to be copied
+    let local_file_path = "bin_to_copy.txt";
+    let mut file = File::open(local_file_path).unwrap();
+    let mut buffer: Vec<u8> = Vec::new();
+    file.read_to_end(&mut buffer).unwrap();
+
     for machine in &vms {
-        con_to_mach(machine.0.to_string(), machine.1.to_string(), test_dir_name).await;
+        con_to_mach(machine.0.to_string(), machine.1.to_string(), test_dir_name, buffer.clone()).await;
     }
-    //con_to_mach(vms[0].0.to_string(), vms[0].1.to_string()).await;
-    //con_to_mach(vms[1].0.to_string(), vms[1].1.to_string()).await;
+
 
     //TODO: Check if binary is already installed
     //          if not, install binary

@@ -1,12 +1,8 @@
 use std::sync::Arc;
-//use std::io;
-//use std::io::Write;
-//use tokio::io as tokio_io;
 use russh::*;
 use russh::keys::*;
 use russh_keys::decode_secret_key;
-//use russh_keys::key::KeyPair;
-//use anyhow::Error;
+use tokio::io::AsyncWriteExt;
 use async_trait::async_trait;
 use log::info;
 use russh_sftp::client::SftpSession;
@@ -50,12 +46,8 @@ impl client::Handler for Client {
  
 
 
-pub async fn connect_to_machine(vm_ip: String, path_to_key: String, test_dir_name: &str) {
-
-    //??
-    //env_logger::init();
+pub async fn connect_to_machine(vm_ip: String, path_to_key: String, test_dir_name: &str, binary: Vec<u8>) {
    
-
     //set up configuration for the session
     let config = russh::client::Config::default();
     let sh = Client {};
@@ -80,22 +72,25 @@ pub async fn connect_to_machine(vm_ip: String, path_to_key: String, test_dir_nam
         //print path of sftp on vm
         info!("current path: {:?}", sftp.canonicalize(".").await.unwrap());
 
-        let path_on_vm = format!("./{}", test_dir_name);
-        //check if the file already exists on the vm
-        match sftp.try_exists(&path_on_vm).await {
+        //format the test_dir name 
+        let path_to_dir = format!("./{}", &test_dir_name);
+
+
+        //check if the directory already exists on the vm
+        match sftp.try_exists(&path_to_dir).await {
             
             Ok(exists) => {
 
                 if exists {
                     //if it exists, check the metadata
-                    match sftp.metadata(&path_on_vm).await {
+                    match sftp.metadata(&path_to_dir).await {
                         Ok(metadata) => {
                             //if metadata is a directory, then print so
                             if metadata.is_dir()  {
-                                println!("Directory '{}' already exists!", &path_on_vm);
+                                println!("Directory '{}' already exists!", &path_to_dir);
                                 //TODO: Figure out what do do when directory already exists
                             } else {
-                                println!("A file exists at '{}', but it is not a directory.", &path_on_vm);
+                                println!("A file exists at '{}', but it is not a directory.", &path_to_dir);
                                 //TODO: Figure out what to do when 
                             }
                         }
@@ -105,8 +100,8 @@ pub async fn connect_to_machine(vm_ip: String, path_to_key: String, test_dir_nam
                     }
                 } else {
                     // Directory doesn't exist, create it
-                    sftp.create_dir(&path_on_vm).await.unwrap();
-                    println!("Directory '{}' created.", &path_on_vm);
+                    sftp.create_dir(&path_to_dir).await.unwrap();
+                    println!("Directory '{}' created.", &path_to_dir);
                 }
             }
             Err(err) => {
@@ -114,16 +109,52 @@ pub async fn connect_to_machine(vm_ip: String, path_to_key: String, test_dir_nam
             }
         }
 
-        //create a new directory on remote machine
-        //sftp.create_dir(path_on_vm).await.unwrap();
-
-        //deelte a directory on remote machine
-        //sftp.remove_file(path_on_vm).await.unwrap();
-
-
         //copy something over to the machine
 
+        //at this point, there is a new blank directory on the remote machine
+        //TODO: Create a file and copy a binary over from my machine
 
+        //extension for the new binary
+        let extension = "bin";
+        //path to the new binary
+        let path_to_bin = format!("{}/{}.{}", test_dir_name, test_dir_name, extension);
+
+        //match statement to ensure we don't write over another file.
+        match sftp.try_exists(&path_to_bin).await {
+            Ok(exists) => {
+                if exists {
+                    //if it already exists, print that it already exists
+                    println!("There already exists a file at {}!", &path_to_bin);
+                } else {
+                    //if it doesn't exist, create the file and copy the binary over
+                    //create the file
+                    let mut file_on_vm = sftp.create(&path_to_bin).await.unwrap();
+                    //write the binary to the file
+                    file_on_vm.write_all(&binary).await.unwrap();
+                    //ensure the file was written
+                    file_on_vm.flush().await.unwrap();
+                }
+            }
+            Err(err) => {
+                print!("Error checking for the existence of the file. Error: {}", err);
+            }
+        }
+        
+
+//----------- Code to clean the directory, doesn't work when passing the sftp to another func ---------   
+        // let path_to_bin = format!("{}/{}.bin", test_dir_name, test_dir_name);
+        // sftp.remove_file(path_to_bin).await.unwrap();
+        // sftp.remove_dir(path_to_dir).await.unwrap();
+//----------------------------------------------------------------------------------------------------
+
+        //close to sftp connection
+        sftp.close().await.unwrap();
+
+        //execute the binary
+        //let command = "ls";
+        //is this right?
+        //channel.exec(true, command).await.unwrap();
+        
         
     }
 
@@ -135,3 +166,28 @@ pub async fn connect_to_machine(vm_ip: String, path_to_key: String, test_dir_nam
 //TODO: Func to run a binary on said machine??
 
 //TODO: Func to spin down a machine given a VM name
+/*
+async fn copy_bin_over(sftp: SftpSession, new_dir_name: String, binary: Vec<u8>){
+
+    let path_to_bin = format!("{}/{}.bin", new_dir_name, new_dir_name);
+        
+    let mut file_on_vm = sftp.create(&path_to_bin).await.unwrap();
+
+    file_on_vm.write_all(&binary).await.unwrap();
+
+    file_on_vm.flush().await.unwrap();
+}
+*/
+
+/*
+async fn clean(sftp: SftpSession, path_to_dir: String, test_dir_name: String){
+    //create path to bin
+    let path_to_bin = format!("{}/{}.bin", test_dir_name, test_dir_name);
+    
+    //removes file from machine
+    sftp.remove_file(path_to_bin).await.unwrap();
+
+    //removes dir from machine.
+    sftp.remove_dir(path_to_dir).await.unwrap();
+}
+*/
