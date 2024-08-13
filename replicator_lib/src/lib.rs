@@ -109,10 +109,7 @@ pub async fn connect_to_machine(vm_ip: String, path_to_key: String, test_dir_nam
             }
         }
 
-        //copy something over to the machine
-
         //at this point, there is a new blank directory on the remote machine
-        //TODO: Create a file and copy a binary over from my machine
 
         //extension for the new binary
         let extension = "bin";
@@ -133,6 +130,8 @@ pub async fn connect_to_machine(vm_ip: String, path_to_key: String, test_dir_nam
                     file_on_vm.write_all(&binary).await.unwrap();
                     //ensure the file was written
                     file_on_vm.flush().await.unwrap();
+
+                    println!("File was written at {}!", &path_to_bin);
                 }
             }
             Err(err) => {
@@ -150,11 +149,14 @@ pub async fn connect_to_machine(vm_ip: String, path_to_key: String, test_dir_nam
         //close to sftp connection
         sftp.close().await.unwrap();
 
+
+        //must create a new channel, old one is consumed by sftp
+        let new_channel = session.channel_open_session().await.unwrap();
         //execute the binary
-        //let command = "ls";
+        let command = "mkdir cmd_from_rust";
         //is this right?
-        //channel.exec(true, command).await.unwrap();
-        
+        new_channel.exec(false, command).await.unwrap();
+
         
     }
 
@@ -164,6 +166,7 @@ pub async fn connect_to_machine(vm_ip: String, path_to_key: String, test_dir_nam
 
 
 //TODO: Func to run a binary on said machine??
+
 
 //TODO: Func to spin down a machine given a VM name
 /*
