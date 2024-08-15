@@ -17,7 +17,8 @@ async fn main() -> anyhow::Result<()>{
         return Ok(());
     }
 
-    let local_binary_path = &args[0];
+    let local_binary_path = 
+    "target/x86_64-unknown-linux-musl/release/replicator_bin";
     let file_path = &args[1];
     let test_dir_name = &args[2];
 
@@ -44,7 +45,6 @@ async fn main() -> anyhow::Result<()>{
     let mut file = File::open(local_binary_path).unwrap();
     let mut buffer: Vec<u8> = Vec::new();
     file.read_to_end(&mut buffer).unwrap();
-
 
     for machine in &vm_ips_and_ssh_keys {
         sftp_to_machine(

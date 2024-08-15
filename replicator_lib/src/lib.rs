@@ -113,7 +113,7 @@ pub async fn sftp_to_machine(
         // at this point, there is a new blank directory on the remote machine
 
         // path to the new binary
-        let path_to_bin = format!("{}/{}", test_dir_name, test_dir_name);
+        let path_to_bin = format!("{}/{}", path_to_dir, test_dir_name);
 
         // match statement to ensure we don't write over another file.
         match sftp.try_exists(&path_to_bin).await {
@@ -141,50 +141,21 @@ pub async fn sftp_to_machine(
             }
         }
 
-        //----------- Code to clean the directory, doesn't work when passing the sftp to another func ---------
-        // let path_to_bin = format!("{}/{}.bin", test_dir_name, test_dir_name);
-        // sftp.remove_file(path_to_bin).await.unwrap();
-        // sftp.remove_dir(path_to_dir).await.unwrap();
+        //----------- Code to clean the directory, doesn't work when passing the channel to another func ---------
+        // let cleaning_channel = session.channel_open_session().await.unwrap();
+        // let command = format!("rm -r {}", path_to_dir);
+        // cleaning_channel.exec(false, command).await.unwrap();
         //----------------------------------------------------------------------------------------------------
 
         //close to sftp connection
         sftp.close().await.unwrap();
 
-        // // must create a new channel, old one is consumed by sftp
+        // // create a new channel to execute the binary
         // let new_channel = session.channel_open_session().await.unwrap();
-        // // execute the binary
-        // let command = "mkdir cmd_from_rust";
-        // // is this right?
-        // new_channel.exec(false, command).await.unwrap();
+        // // calling the path to the binary to execute it
+        // new_channel.exec(false, path_to_bin).await.unwrap();
     }
 }
 
-//TODO: Func to run a binary on said machine??
 
-//TODO: Func to spin down a machine given a VM name
-/*
-async fn copy_bin_over(sftp: SftpSession, new_dir_name: String, binary: Vec<u8>){
-
-    let path_to_bin = format!("{}/{}.bin", new_dir_name, new_dir_name);
-
-    let mut file_on_vm = sftp.create(&path_to_bin).await.unwrap();
-
-    file_on_vm.write_all(&binary).await.unwrap();
-
-    file_on_vm.flush().await.unwrap();
-}
-*/
-
-/*
-async fn clean(sftp: SftpSession, path_to_dir: String, test_dir_name: String){
-    // create path to bin
-    let path_to_bin = format!("{}/{}.bin", test_dir_name, test_dir_name);
-
-    // removes file from machine
-    sftp.remove_file(path_to_bin).await.unwrap();
-
-    // removes dir from machine.
-    sftp.remove_dir(path_to_dir).await.unwrap();
-}
-*/
 
