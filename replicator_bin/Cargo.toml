@@ -1,0 +1,10 @@
+[package]
+name = "replicator_bin"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+replicator_lib = { workspace = true }
+tokio = { workspace = true }
+env_logger = { workspace = true }
+anyhow = { workspace = true }
