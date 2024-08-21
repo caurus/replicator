@@ -39,9 +39,9 @@ async fn main() -> anyhow::Result<()>{
     env_logger::init();
 
     // read binary to be copied
-    let mut binary_to_copy = File::open(local_binary_path).unwrap();
+    let mut binary_to_copy = File::open(local_binary_path)?;
     let mut buffer: Vec<u8> = Vec::new();
-    binary_to_copy.read_to_end(&mut buffer).unwrap();
+    binary_to_copy.read_to_end(&mut buffer)?;
 
     for machine in &vm_ips_and_ssh_keys {
         sftp_to_machine(

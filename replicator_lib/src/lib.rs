@@ -1,7 +1,10 @@
 use async_trait::async_trait;
 use log::info;
-use russh::keys::*;
-use russh::*;
+use russh::keys::key;
+use russh::{
+    client,
+    ChannelId
+};
 use russh_keys::decode_secret_key;
 use russh_sftp::client::SftpSession;
 use std::sync::Arc;
@@ -47,8 +50,8 @@ pub async fn sftp_to_machine(
     let config = russh::client::Config::default();
     let sh = Client {};
 
-    let private_key = tokio::fs::read_to_string(path_to_key).await.unwrap();
-    let keypair = decode_secret_key(&private_key, None).unwrap();
+    let private_key = tokio::fs::read_to_string(path_to_key).await?;
+    let keypair = decode_secret_key(&private_key, None)?;
     // connect to the session
     let mut session = russh::client::connect(Arc::new(config), (vm_ip, 22), sh)
         .await?;
@@ -73,7 +76,7 @@ pub async fn sftp_to_machine(
     let sftp = SftpSession::new(channel.into_stream()).await?;
 
     // print path of sftp on vm
-    info!("current path: {:?}", sftp.canonicalize(".").await.unwrap());
+    info!("current path: {:?}", sftp.canonicalize(".").await?);
 
     // format the test_dir name
     let path_to_dir = format!("./{}", &test_dir_name);
@@ -89,7 +92,7 @@ pub async fn sftp_to_machine(
                         if metadata.is_dir() {
                             println!("Directory '{}' already exists!", &path_to_dir);
                         } else {
-                            println!(
+                            bail!(
                                 "A file exists at '{}', but it is not a directory.",
                                 &path_to_dir
                             );
@@ -147,10 +150,10 @@ pub async fn sftp_to_machine(
     //close to sftp connection
     sftp.close().await?;
 
-    // // create a new channel to execute the binary
-    // let new_channel = session.channel_open_session().await.unwrap();
-    // // calling the path to the binary to execute it
-    // new_channel.exec(false, path_to_bin).await.unwrap();
+    // create a new channel to execute the binary
+    let new_channel = session.channel_open_session().await?;
+    // calling the path to the binary to execute it
+    new_channel.exec(false, path_to_bin).await?;
 
     Ok(())
     
